@@ -1,6 +1,7 @@
 """
 This code uses the onnx model to detect faces from live video or cameras.
 """
+import os
 import time
 
 import cv2
@@ -54,17 +55,18 @@ predictor = backend.prepare(predictor, device="CPU")  # default CPU
 
 ort_session = ort.InferenceSession(onnx_path)
 input_name = ort_session.get_inputs()[0].name
-
-cap = cv2.VideoCapture("/home/linzai/Videos/video/16_6.MP4")  # capture from camera
+result_path = "./detect_imgs_results_onnx"
 
 threshold = 0.7
-
+path = "imgs"
 sum = 0
-while True:
-    ret, orig_image = cap.read()
-    if orig_image is None:
-        print("no img")
-        break
+if not os.path.exists(result_path):
+    os.makedirs(result_path)
+listdir = os.listdir(path)
+sum = 0
+for file_path in listdir:
+    img_path = os.path.join(path, file_path)
+    orig_image = cv2.imread(img_path)
     image = cv2.cvtColor(orig_image, cv2.COLOR_BGR2RGB)
     image = cv2.resize(image, (320, 240))
     # image = cv2.resize(image, (640, 480))
@@ -90,11 +92,6 @@ while True:
         #             1,  # font scale
         #             (255, 0, 255),
         #             2)  # line type
+        cv2.imwrite(os.path.join(result_path, file_path), orig_image)
     sum += boxes.shape[0]
-    orig_image = cv2.resize(orig_image, (0, 0), fx=0.7, fy=0.7)
-    cv2.imshow('annotated', orig_image)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-cap.release()
-cv2.destroyAllWindows()
 print("sum:{}".format(sum))
